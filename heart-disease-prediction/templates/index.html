@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CardioScan — Heart Disease Predictor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0a0e1a;
+      --surface:   #111827;
+      --card:      #161d2e;
+      --border:    rgba(99,179,237,0.12);
+      --accent:    #ef4444;
+      --accent2:   #3b82f6;
+      --green:     #22c55e;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --serif:     'DM Serif Display', serif;
+      --sans:      'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* BG pulse */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(239,68,68,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: pulse 8s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -150px; right: -150px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: pulse 10s ease-in-out infinite alternate-reverse;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes pulse { to { transform: scale(1.3); } }
+
+    /* ── Header ── */
+    header {
+      position: relative; z-index: 10;
+      padding: 28px 40px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #ef4444, #f87171);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-family: var(--serif); font-size: 1.4rem; }
+    .logo-text span { color: #ef4444; }
+    nav a {
+      color: var(--muted); text-decoration: none;
+      font-size: 0.85rem; font-weight: 500;
+      margin-left: 28px; transition: color .2s;
+    }
+    nav a:hover { color: var(--text); }
+    nav a.active { color: var(--accent2); }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative; z-index: 5;
+      text-align: center; padding: 60px 20px 40px;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #f87171;
+      font-size: 0.75rem; font-weight: 600;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 6px 16px; border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+    .hero h1 em { color: #ef4444; font-style: italic; }
+    .hero p {
+      color: var(--muted); font-size: 1rem;
+      max-width: 520px; margin: 0 auto 36px;
+      line-height: 1.7;
+    }
+
+    /* ── Stats bar ── */
+    .stats-bar {
+      display: flex; justify-content: center; gap: 32px;
+      flex-wrap: wrap; margin-bottom: 50px;
+      position: relative; z-index: 5;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      font-family: var(--serif); font-size: 2rem;
+      color: var(--text);
+    }
+    .stat-label { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+
+    /* ── Main layout ── */
+    .container {
+      max-width: 900px; margin: 0 auto;
+      padding: 0 24px 80px;
+      position: relative; z-index: 5;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-family: var(--serif); font-size: 1.3rem;
+      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-title .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0;
+    }
+
+    /* ── Form grid ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--muted); letter-spacing: 0.8px;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-family: var(--sans); font-size: 0.9rem;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: rgba(59,130,246,0.5);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+    }
+    .form-group select option { background: var(--surface); }
+
+    /* ── Button ── */
+    .btn-predict {
+      width: 100%; margin-top: 28px;
+      padding: 16px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: #fff; border: none; border-radius: 12px;
+      font-family: var(--sans); font-size: 1rem; font-weight: 600;
+      cursor: pointer; letter-spacing: 0.3px;
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+      position: relative; overflow: hidden;
+    }
+    .btn-predict:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(239,68,68,0.35);
+    }
+    .btn-predict:active { transform: translateY(0); }
+    .btn-predict.loading { opacity: .7; pointer-events: none; }
+    .btn-predict .spinner {
+      display: none; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto;
+    }
+    .btn-predict.loading .spinner { display: block; }
+    .btn-predict.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result card ── */
+    #result-card {
+      display: none;
+      border-radius: 20px; padding: 36px;
+      text-align: center;
+      animation: fadeUp .4s ease;
+    }
+    #result-card.positive {
+      background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));
+      border: 1px solid rgba(239,68,68,0.3);
+    }
+    #result-card.negative {
+      background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(21,128,61,0.06));
+      border: 1px solid rgba(34,197,94,0.3);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .result-icon { font-size: 3rem; margin-bottom: 16px; }
+    .result-label {
+      font-family: var(--serif); font-size: 2rem;
+      margin-bottom: 8px;
+    }
+    .result-msg {
+      color: var(--muted); font-size: 0.95rem;
+      margin-bottom: 24px; line-height: 1.6;
+    }
+    .result-meta {
+      display: flex; justify-content: center; gap: 32px;
+      flex-wrap: wrap;
+    }
+    .meta-item { text-align: center; }
+    .meta-val {
+      font-family: var(--serif); font-size: 1.6rem;
+    }
+    .meta-val.red { color: #f87171; }
+    .meta-val.green { color: #4ade80; }
+    .meta-key { color: var(--muted); font-size: 0.75rem; margin-top: 2px; }
+
+    /* Confidence bar */
+    .conf-bar-wrap {
+      margin-top: 20px;
+      background: rgba(255,255,255,.06);
+      border-radius: 8px; overflow: hidden; height: 6px;
+    }
+    .conf-bar {
+      height: 100%; border-radius: 8px;
+      transition: width 1s ease;
+    }
+    .conf-bar.red  { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .conf-bar.green{ background: linear-gradient(90deg, #22c55e, #4ade80); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 32px;
+      color: var(--muted); font-size: 0.8rem;
+      position: relative; z-index: 5;
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+
+    @media (max-width: 600px) {
+      header { padding: 20px; }
+      .card { padding: 24px; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">❤️</div>
+    <div class="logo-text">Cardio<span>Scan</span></div>
+  </div>
+  <nav>
+    <a href="/" class="active">Predict</a>
+    <a href="/history">History</a>
+    <a href="https://github.com/bhaveshyede321" target="_blank">GitHub</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-badge">AI-Powered Risk Assessment</div>
+  <h1>Predict Heart Disease<br><em>Before It Strikes</em></h1>
+  <p>Enter your clinical parameters below. Our Random Forest model analyzes 13 biomarkers to assess cardiovascular risk in seconds.</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num" id="stat-total">{{ stats.total }}</div>
+    <div class="stat-label">Total Predictions</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" style="color:#ef4444" id="stat-risk">{{ stats.at_risk }}</div>
+    <div class="stat-label">At Risk</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" style="color:#22c55e" id="stat-safe">{{ stats.safe }}</div>
+    <div class="stat-label">Healthy</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">70.6%</div>
+    <div class="stat-label">Model Accuracy</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-title"><div class="dot"></div> Patient Parameters</div>
+    <div class="form-grid">
+
+      <div class="form-group">
+        <label>Age</label>
+        <input type="number" id="age" placeholder="e.g. 52" min="20" max="100"/>
+      </div>
+
+      <div class="form-group">
+        <label>Sex</label>
+        <select id="sex">
+          <option value="">Select</option>
+          <option value="1">Male</option>
+          <option value="0">Female</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Chest Pain Type</label>
+        <select id="cp">
+          <option value="">Select</option>
+          <option value="0">Typical Angina</option>
+          <option value="1">Atypical Angina</option>
+          <option value="2">Non-anginal Pain</option>
+          <option value="3">Asymptomatic</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Resting BP (mmHg)</label>
+        <input type="number" id="trestbps" placeholder="e.g. 130" min="80" max="220"/>
+      </div>
+
+      <div class="form-group">
+        <label>Cholesterol (mg/dl)</label>
+        <input type="number" id="chol" placeholder="e.g. 240" min="100" max="600"/>
+      </div>
+
+      <div class="form-group">
+        <label>Fasting Blood Sugar</label>
+        <select id="fbs">
+          <option value="">Select</option>
+          <option value="1">&gt; 120 mg/dl (Yes)</option>
+          <option value="0">≤ 120 mg/dl (No)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Resting ECG</label>
+        <select id="restecg">
+          <option value="">Select</option>
+          <option value="0">Normal</option>
+          <option value="1">ST-T Abnormality</option>
+          <option value="2">LV Hypertrophy</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Max Heart Rate</label>
+        <input type="number" id="thalach" placeholder="e.g. 150" min="60" max="220"/>
+      </div>
+
+      <div class="form-group">
+        <label>Exercise Induced Angina</label>
+        <select id="exang">
+          <option value="">Select</option>
+          <option value="1">Yes</option>
+          <option value="0">No</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>ST Depression (Oldpeak)</label>
+        <input type="number" id="oldpeak" placeholder="e.g. 1.0" step="0.1" min="0" max="10"/>
+      </div>
+
+      <div class="form-group">
+        <label>ST Slope</label>
+        <select id="slope">
+          <option value="">Select</option>
+          <option value="0">Upsloping</option>
+          <option value="1">Flat</option>
+          <option value="2">Downsloping</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Major Vessels (0–3)</label>
+        <select id="ca">
+          <option value="">Select</option>
+          <option value="0">0</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Thalassemia</label>
+        <select id="thal">
+          <option value="">Select</option>
+          <option value="1">Normal</option>
+          <option value="2">Fixed Defect</option>
+          <option value="3">Reversible Defect</option>
+        </select>
+      </div>
+
+    </div>
+
+    <button class="btn-predict" id="predict-btn" onclick="runPrediction()">
+      <span class="btn-text">🫀 Analyse Risk</span>
+      <div class="spinner"></div>
+    </button>
+  </div>
+
+  <!-- Result -->
+  <div id="result-card">
+    <div class="result-icon" id="result-icon"></div>
+    <div class="result-label" id="result-label"></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="result-meta">
+      <div class="meta-item">
+        <div class="meta-val" id="meta-conf"></div>
+        <div class="meta-key">Confidence</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-val" id="meta-risk"></div>
+        <div class="meta-key">Risk Level</div>
+      </div>
+    </div>
+    <div class="conf-bar-wrap" style="max-width:320px;margin:20px auto 0">
+      <div class="conf-bar" id="conf-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Built by <strong>Bhavesh Yede</strong> · Python · Flask · Random Forest · SQLite &nbsp;|&nbsp;
+  <a href="https://github.com/bhaveshyede321/heart-disease-prediction" target="_blank">View on GitHub</a>
+  <br><br>
+  ⚠️ For educational purposes only. Not a substitute for medical advice.
+</footer>
+
+<script>
+  const FIELDS = ["age","sex","cp","trestbps","chol","fbs","restecg","thalach","exang","oldpeak","slope","ca","thal"];
+
+  async function runPrediction() {
+    const btn = document.getElementById("predict-btn");
+    const data = {};
+
+    for (const f of FIELDS) {
+      const val = document.getElementById(f).value;
+      if (val === "" || val === null) {
+        alert(`Please fill in: ${f.toUpperCase()}`);
+        return;
+      }
+      data[f] = parseFloat(val);
+    }
+
+    btn.classList.add("loading");
+
+    try {
+      const res = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+
+      if (result.error) { alert("Error: " + result.error); return; }
+      showResult(result);
+
+      // Refresh stats
+      const stats = await (await fetch("/api/stats")).json();
+      document.getElementById("stat-total").textContent = stats.total;
+      document.getElementById("stat-risk").textContent  = stats.at_risk;
+      document.getElementById("stat-safe").textContent  = stats.safe;
+
+    } catch(e) {
+      alert("Connection error. Is the Flask server running?");
+    } finally {
+      btn.classList.remove("loading");
+    }
+  }
+
+  function showResult(r) {
+    const card  = document.getElementById("result-card");
+    const isPos = r.prediction === 1;
+
+    card.className = "card " + (isPos ? "positive" : "negative");
+    document.getElementById("result-icon").textContent  = isPos ? "⚠️" : "✅";
+    document.getElementById("result-label").textContent = r.label;
+    document.getElementById("result-msg").textContent   = r.message;
+
+    const confEl = document.getElementById("meta-conf");
+    confEl.textContent = r.confidence + "%";
+    confEl.className   = "meta-val " + (isPos ? "red" : "green");
+
+    const riskEl = document.getElementById("meta-risk");
+    riskEl.textContent = r.risk_level;
+    riskEl.className   = "meta-val " + (isPos ? "red" : "green");
+
+    const bar = document.getElementById("conf-bar");
+    bar.className = "conf-bar " + (isPos ? "red" : "green");
+    setTimeout(() => { bar.style.width = r.confidence + "%"; }, 50);
+
+    card.style.display = "block";
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+</script>
+</body>
+</html>
